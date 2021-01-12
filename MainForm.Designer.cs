@@ -42,6 +42,9 @@ namespace MailClient
             this.MailTreeView = new System.Windows.Forms.TreeView();
             this.textBox1 = new System.Windows.Forms.TextBox();
             this.webBrowser = new System.Windows.Forms.WebBrowser();
+            this.AddFolderButton = new System.Windows.Forms.Button();
+            this.AddMailButton = new System.Windows.Forms.Button();
+            this.button1 = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // ConnectButton
@@ -136,10 +139,11 @@ namespace MailClient
             // 
             this.MailTreeView.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left)));
-            this.MailTreeView.Location = new System.Drawing.Point(12, 40);
+            this.MailTreeView.Location = new System.Drawing.Point(12, 76);
             this.MailTreeView.Name = "MailTreeView";
-            this.MailTreeView.Size = new System.Drawing.Size(403, 469);
+            this.MailTreeView.Size = new System.Drawing.Size(403, 433);
             this.MailTreeView.TabIndex = 10;
+            this.MailTreeView.AfterSelect += new System.Windows.Forms.TreeViewEventHandler(this.MailTreeView_AfterSelect);
             // 
             // textBox1
             // 
@@ -162,11 +166,42 @@ namespace MailClient
             this.webBrowser.Size = new System.Drawing.Size(831, 468);
             this.webBrowser.TabIndex = 12;
             // 
+            // AddFolderButton
+            // 
+            this.AddFolderButton.Location = new System.Drawing.Point(15, 47);
+            this.AddFolderButton.Name = "AddFolderButton";
+            this.AddFolderButton.Size = new System.Drawing.Size(75, 23);
+            this.AddFolderButton.TabIndex = 13;
+            this.AddFolderButton.Text = "Add Folder";
+            this.AddFolderButton.UseVisualStyleBackColor = true;
+            this.AddFolderButton.Click += new System.EventHandler(this.AddFolderButton_Click);
+            // 
+            // AddMailButton
+            // 
+            this.AddMailButton.Location = new System.Drawing.Point(96, 47);
+            this.AddMailButton.Name = "AddMailButton";
+            this.AddMailButton.Size = new System.Drawing.Size(75, 23);
+            this.AddMailButton.TabIndex = 14;
+            this.AddMailButton.Text = "Add Mail";
+            this.AddMailButton.UseVisualStyleBackColor = true;
+            // 
+            // button1
+            // 
+            this.button1.Location = new System.Drawing.Point(177, 47);
+            this.button1.Name = "button1";
+            this.button1.Size = new System.Drawing.Size(75, 23);
+            this.button1.TabIndex = 15;
+            this.button1.Text = "Delete";
+            this.button1.UseVisualStyleBackColor = true;
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1264, 589);
+            this.Controls.Add(this.button1);
+            this.Controls.Add(this.AddMailButton);
+            this.Controls.Add(this.AddFolderButton);
             this.Controls.Add(this.webBrowser);
             this.Controls.Add(this.textBox1);
             this.Controls.Add(this.MailTreeView);
@@ -203,6 +238,9 @@ namespace MailClient
         private System.Windows.Forms.TreeView MailTreeView;
         private System.Windows.Forms.TextBox textBox1;
         private System.Windows.Forms.WebBrowser webBrowser;
+        private System.Windows.Forms.Button AddFolderButton;
+        private System.Windows.Forms.Button AddMailButton;
+        private System.Windows.Forms.Button button1;
     }
 }
 

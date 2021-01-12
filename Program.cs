@@ -13,9 +13,6 @@ namespace MailClient
 {
     static class Program
     {
-        public static readonly ImapClient Client = new ImapClient(new ProtocolLogger("imap.txt"));
-        public static ICredentials Credentials;
-
         [STAThread]
         static void Main()
         {
