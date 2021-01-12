@@ -17,7 +17,8 @@ namespace MailClient
 {
     public partial class MainForm : Form
     {
-        public MainForm()
+		const MessageSummaryItems SummaryItems = MessageSummaryItems.UniqueId | MessageSummaryItems.Envelope | MessageSummaryItems.Flags | MessageSummaryItems.BodyStructure;
+		public MainForm()
         {
             InitializeComponent();
         }
@@ -64,14 +65,29 @@ namespace MailClient
 
 			foreach (var subfolder in subfolders)
 			{
-				var node = new TreeNode(subfolder.Name) { Tag = subfolder, ToolTipText = subfolder.FullName };
+				var node = new TreeNode(subfolder.Name + " " + subfolder.Unread.ToString()) { Tag = subfolder, ToolTipText = subfolder.FullName  };
+				var wer=subfolder.GetSubfoldersAsync().Result;
+				if (!subfolder.IsOpen)
+					subfolder.OpenAsync(FolderAccess.ReadOnly).Wait();
+				var summaries = subfolder.FetchAsync(0, -1, SummaryItems).Result;
+				
+				foreach (var message in summaries)
+				{
 
+					var subNode = new TreeNode(message.Envelope.Subject) ;
+
+
+					node.Nodes.Add(subNode);
+				}
 				MailTreeView.Nodes.Add(node);
-
+				
 			}
 
 		}
 
+        private void MainForm_Load(object sender, EventArgs e)
+        {
 
+        }
     }
 }

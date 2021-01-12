@@ -41,6 +41,7 @@ namespace MailClient
             this.PasswordTextBox = new System.Windows.Forms.TextBox();
             this.MailTreeView = new System.Windows.Forms.TreeView();
             this.textBox1 = new System.Windows.Forms.TextBox();
+            this.webBrowser = new System.Windows.Forms.WebBrowser();
             this.SuspendLayout();
             // 
             // ConnectButton
@@ -150,11 +151,23 @@ namespace MailClient
             this.textBox1.Size = new System.Drawing.Size(1240, 62);
             this.textBox1.TabIndex = 11;
             // 
+            // webBrowser
+            // 
+            this.webBrowser.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.webBrowser.Location = new System.Drawing.Point(421, 41);
+            this.webBrowser.MinimumSize = new System.Drawing.Size(20, 20);
+            this.webBrowser.Name = "webBrowser";
+            this.webBrowser.Size = new System.Drawing.Size(831, 468);
+            this.webBrowser.TabIndex = 12;
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1264, 589);
+            this.Controls.Add(this.webBrowser);
             this.Controls.Add(this.textBox1);
             this.Controls.Add(this.MailTreeView);
             this.Controls.Add(this.PasswordTextBox);
@@ -169,6 +182,7 @@ namespace MailClient
             this.Controls.Add(this.ConnectButton);
             this.Name = "MainForm";
             this.Text = "IMAP Client";
+            this.Load += new System.EventHandler(this.MainForm_Load);
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -188,6 +202,7 @@ namespace MailClient
         private System.Windows.Forms.TextBox PasswordTextBox;
         private System.Windows.Forms.TreeView MailTreeView;
         private System.Windows.Forms.TextBox textBox1;
+        private System.Windows.Forms.WebBrowser webBrowser;
     }
 }
 
