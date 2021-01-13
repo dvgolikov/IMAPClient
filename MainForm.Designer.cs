@@ -40,11 +40,12 @@ namespace MailClient
             this.label4 = new System.Windows.Forms.Label();
             this.PasswordTextBox = new System.Windows.Forms.TextBox();
             this.MailTreeView = new System.Windows.Forms.TreeView();
-            this.textBox1 = new System.Windows.Forms.TextBox();
+            this.logBox = new System.Windows.Forms.TextBox();
             this.webBrowser = new System.Windows.Forms.WebBrowser();
             this.AddFolderButton = new System.Windows.Forms.Button();
             this.AddMailButton = new System.Windows.Forms.Button();
-            this.button1 = new System.Windows.Forms.Button();
+            this.DeleteButton = new System.Windows.Forms.Button();
+            this.connectedStatusLabel = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // ConnectButton
@@ -56,7 +57,7 @@ namespace MailClient
             this.ConnectButton.TabIndex = 0;
             this.ConnectButton.Text = "Connect";
             this.ConnectButton.UseVisualStyleBackColor = true;
-            this.ConnectButton.Click += new System.EventHandler(this.ConnectButton_Click);
+            this.ConnectButton.Click += new System.EventHandler(this.ConnectButton_ClickAsync);
             // 
             // DisconnectButton
             // 
@@ -145,15 +146,15 @@ namespace MailClient
             this.MailTreeView.TabIndex = 10;
             this.MailTreeView.AfterSelect += new System.Windows.Forms.TreeViewEventHandler(this.MailTreeView_AfterSelect);
             // 
-            // textBox1
+            // logBox
             // 
-            this.textBox1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
+            this.logBox.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.textBox1.Location = new System.Drawing.Point(12, 515);
-            this.textBox1.Multiline = true;
-            this.textBox1.Name = "textBox1";
-            this.textBox1.Size = new System.Drawing.Size(1240, 62);
-            this.textBox1.TabIndex = 11;
+            this.logBox.Location = new System.Drawing.Point(12, 515);
+            this.logBox.Multiline = true;
+            this.logBox.Name = "logBox";
+            this.logBox.Size = new System.Drawing.Size(1240, 62);
+            this.logBox.TabIndex = 11;
             // 
             // webBrowser
             // 
@@ -168,7 +169,7 @@ namespace MailClient
             // 
             // AddFolderButton
             // 
-            this.AddFolderButton.Location = new System.Drawing.Point(15, 47);
+            this.AddFolderButton.Location = new System.Drawing.Point(177, 47);
             this.AddFolderButton.Name = "AddFolderButton";
             this.AddFolderButton.Size = new System.Drawing.Size(75, 23);
             this.AddFolderButton.TabIndex = 13;
@@ -178,32 +179,43 @@ namespace MailClient
             // 
             // AddMailButton
             // 
-            this.AddMailButton.Location = new System.Drawing.Point(96, 47);
+            this.AddMailButton.Location = new System.Drawing.Point(258, 47);
             this.AddMailButton.Name = "AddMailButton";
             this.AddMailButton.Size = new System.Drawing.Size(75, 23);
             this.AddMailButton.TabIndex = 14;
             this.AddMailButton.Text = "Add Mail";
             this.AddMailButton.UseVisualStyleBackColor = true;
             // 
-            // button1
+            // DeleteButton
             // 
-            this.button1.Location = new System.Drawing.Point(177, 47);
-            this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(75, 23);
-            this.button1.TabIndex = 15;
-            this.button1.Text = "Delete";
-            this.button1.UseVisualStyleBackColor = true;
+            this.DeleteButton.Location = new System.Drawing.Point(339, 47);
+            this.DeleteButton.Name = "DeleteButton";
+            this.DeleteButton.Size = new System.Drawing.Size(75, 23);
+            this.DeleteButton.TabIndex = 15;
+            this.DeleteButton.Text = "Delete";
+            this.DeleteButton.UseVisualStyleBackColor = true;
+            this.DeleteButton.Click += new System.EventHandler(this.DeleteButton_Click);
+            // 
+            // connectedStatusLabel
+            // 
+            this.connectedStatusLabel.AutoSize = true;
+            this.connectedStatusLabel.Location = new System.Drawing.Point(12, 52);
+            this.connectedStatusLabel.Name = "connectedStatusLabel";
+            this.connectedStatusLabel.Size = new System.Drawing.Size(59, 13);
+            this.connectedStatusLabel.TabIndex = 16;
+            this.connectedStatusLabel.Text = "Connected";
             // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1264, 589);
-            this.Controls.Add(this.button1);
+            this.Controls.Add(this.connectedStatusLabel);
+            this.Controls.Add(this.DeleteButton);
             this.Controls.Add(this.AddMailButton);
             this.Controls.Add(this.AddFolderButton);
             this.Controls.Add(this.webBrowser);
-            this.Controls.Add(this.textBox1);
+            this.Controls.Add(this.logBox);
             this.Controls.Add(this.MailTreeView);
             this.Controls.Add(this.PasswordTextBox);
             this.Controls.Add(this.label4);
@@ -236,11 +248,12 @@ namespace MailClient
         private System.Windows.Forms.Label label4;
         private System.Windows.Forms.TextBox PasswordTextBox;
         private System.Windows.Forms.TreeView MailTreeView;
-        private System.Windows.Forms.TextBox textBox1;
+        private System.Windows.Forms.TextBox logBox;
         private System.Windows.Forms.WebBrowser webBrowser;
         private System.Windows.Forms.Button AddFolderButton;
         private System.Windows.Forms.Button AddMailButton;
-        private System.Windows.Forms.Button button1;
+        private System.Windows.Forms.Button DeleteButton;
+        private System.Windows.Forms.Label connectedStatusLabel;
     }
 }
 

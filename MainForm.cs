@@ -22,9 +22,10 @@ namespace MailClient
 		public MainForm()
         {
             InitializeComponent();
+            ChangeConnectedState(false);
         }
 
-        private void ConnectButton_Click(object sender, EventArgs e)
+        private void ConnectButton_ClickAsync(object sender, EventArgs e)
         {
 			var credentials = new NetworkCredential(LoginTextBox.Text.Trim(), PasswordTextBox.Text.Trim());
 			var server = ServerTextBox.Text.Trim();
@@ -35,9 +36,45 @@ namespace MailClient
 				port = 0; // default
 
 			mailClient = new MailWorker(credentials, server, port);
-            MailTreeView.Nodes.Add(mailClient.RootNode);
 
-		}
+            mailClient.NewLogMessage += MailClient_NewLogMessage;
+            mailClient.ConnectionState += MailClient_ConnectionState;
+            mailClient.UpdateFoldersTree += MailClient_UpdateFoldersTree;
+            mailClient.UpdateWebBrowser += MailClient_UpdateWebBrowser;
+
+            mailClient.ConnectToServer();
+        }
+
+        private void MailClient_UpdateWebBrowser(object sender, string e)
+        {
+            webBrowser.DocumentText = e;
+        }
+
+        private void MailClient_UpdateFoldersTree(object sender, TreeNode e)
+        {
+            _ = this.BeginInvoke(
+                new Action(() =>
+                {
+                    MailTreeView.Nodes.Clear();
+                    MailTreeView.Nodes.Add(e);
+                }));
+        }
+
+        private void MailClient_ConnectionState(object sender, bool e)
+        {
+            this.BeginInvoke(new Action(() =>
+            {
+                ChangeConnectedState(e);
+            }));
+        }
+
+        private void MailClient_NewLogMessage(object sender, string e)
+        {
+            this.BeginInvoke(new Action(() =>
+            {
+                logBox.Text += e + Environment.NewLine;
+            }));
+        }
 
         private void MainForm_Load(object sender, EventArgs e)
         {
@@ -47,12 +84,41 @@ namespace MailClient
         private void MailTreeView_AfterSelect(object sender, TreeViewEventArgs e)
         {
             SelectedTreeNode = e.Node;
-            mailClient.ReadMails(SelectedTreeNode).ConfigureAwait(false);
+            if (SelectedTreeNode.Tag is IMessageSummary messageInfo)
+            {
+                if (!(SelectedTreeNode.Parent.Tag is IMailFolder mailFolder)) return;
+                mailClient.RenderMailMessage(mailFolder, messageInfo);
+
+                return;
+            }
+
+            if (SelectedTreeNode.Tag is IMailFolder folder)
+            {
+                mailClient.ReadMails(SelectedTreeNode);
+            }
+            
         }
 
         private void AddFolderButton_Click(object sender, EventArgs e)
         {
             mailClient.AddFolder(SelectedTreeNode).ConfigureAwait(false);
+        }
+
+        private void ChangeConnectedState(bool State)
+        {
+            connectedStatusLabel.Text = (State) ? "Connected" : "Disconnected";
+            connectedStatusLabel.BackColor = (State) ? Color.Green : Color.Red;
+            ServerTextBox.Enabled = !State;
+            PortTextBox.Enabled = !State;
+            LoginTextBox.Enabled = !State;
+            PasswordTextBox.Enabled = !State;
+            ConnectButton.Enabled = !State;
+            DisconnectButton.Enabled = State;
+        }
+
+        private void DeleteButton_Click(object sender, EventArgs e)
+        {
+            mailClient.Detete(SelectedTreeNode);
         }
     }
 }
