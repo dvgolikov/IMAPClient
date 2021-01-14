@@ -48,6 +48,7 @@ namespace MailClient
             this.SetReadedButton = new System.Windows.Forms.Button();
             this.SetUnReadedButton = new System.Windows.Forms.Button();
             this.DeleteMessageButton = new System.Windows.Forms.Button();
+            this.checkButton = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // ConnectButton
@@ -228,11 +229,22 @@ namespace MailClient
             this.DeleteMessageButton.UseVisualStyleBackColor = true;
             this.DeleteMessageButton.Click += new System.EventHandler(this.DeleteMessageButton_Click);
             // 
+            // checkButton
+            // 
+            this.checkButton.Location = new System.Drawing.Point(72, 47);
+            this.checkButton.Name = "checkButton";
+            this.checkButton.Size = new System.Drawing.Size(75, 23);
+            this.checkButton.TabIndex = 20;
+            this.checkButton.Text = "Check";
+            this.checkButton.UseVisualStyleBackColor = true;
+            this.checkButton.Click += new System.EventHandler(this.checkButton_Click);
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1264, 589);
+            this.Controls.Add(this.checkButton);
             this.Controls.Add(this.DeleteMessageButton);
             this.Controls.Add(this.SetUnReadedButton);
             this.Controls.Add(this.SetReadedButton);
@@ -281,6 +293,7 @@ namespace MailClient
         private System.Windows.Forms.Button SetReadedButton;
         private System.Windows.Forms.Button SetUnReadedButton;
         private System.Windows.Forms.Button DeleteMessageButton;
+        private System.Windows.Forms.Button checkButton;
     }
 }
 

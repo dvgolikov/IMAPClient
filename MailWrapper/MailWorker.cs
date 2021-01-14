@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Net;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using MailKit;
@@ -14,6 +16,9 @@ namespace MailClient.MailWrapper
 {
     class MailWorker
     {
+        CancellationTokenSource cancel;
+        CancellationTokenSource done;
+
         private readonly Font RegularFont = new Font("Arial", 8f, FontStyle.Regular);
         private readonly Font BoldFont = new Font("Arial", 8f, FontStyle.Bold);
 
@@ -30,6 +35,8 @@ namespace MailClient.MailWrapper
         private readonly string host;
         private readonly int port;
         private Dictionary<TreeNode, IMailFolder> folders;
+        private Dictionary<TreeNode, IMessageSummary> messages;
+        private bool messagesArrived;
         private readonly List<Task> workLoad;
 
         public MailWorker(ICredentials credentials, string server, int prt)
@@ -43,6 +50,7 @@ namespace MailClient.MailWrapper
             Client.MetadataChanged += Client_MetadataChanged;
             options = SecureSocketOptions.SslOnConnect;
             workLoad = new List<Task>();
+            cancel = new CancellationTokenSource();
         }
 
         public void ConnectToServer()
@@ -94,30 +102,41 @@ namespace MailClient.MailWrapper
                 await Client.EnableUTF8Async();
 
             folders = new Dictionary<TreeNode, IMailFolder>();
+            messages = new Dictionary<TreeNode, IMessageSummary>();
+
             var folder = Client.GetFolder(Client.PersonalNamespaces[0]);
 
             var root = new TreeNode() { Name = "root", Text = host, Tag = folder };
 
             folders.Add(root, folder);
 
+            Stopwatch stopWhatch = new Stopwatch();
+            stopWhatch.Start();
+
             await ReadSubFolders(root).ConfigureAwait(false);
+
+            stopWhatch.Stop();
+            NewLogMessage?.Invoke(this, $"{DateTime.Now}: {host} folders readed by {stopWhatch.ElapsedMilliseconds} ms.");
 
             UpdateFoldersTree?.Invoke(this, folders.Keys.Where(x => x.Name == "root").FirstOrDefault());
         }
 
         public async Task ReadSubFolders(TreeNode rootFolder)
         {
+
             if (!folders.TryGetValue(rootFolder, out var rootMailFolder)) return;
 
             var serverFolders= await rootMailFolder.GetSubfoldersAsync();
 
             foreach (var serverFolder in serverFolders)
             {
+                await serverFolder.OpenAsync(FolderAccess.ReadWrite);
                 await serverFolder.StatusAsync(StatusItems.Unread| StatusItems.Count);
 
-                var node = new TreeNode();
-
-                node.Tag = serverFolder;
+                var node = new TreeNode
+                {
+                    Tag = serverFolder
+                };
 
                 if (serverFolder.Count>0)
                 {
@@ -140,21 +159,20 @@ namespace MailClient.MailWrapper
 
                 folders.Add(node, serverFolder);
                 rootFolder.Nodes.Add(node);
-
+                
                 serverFolder.MessageFlagsChanged += ServerFolder_MessageFlagsChanged;
                 serverFolder.CountChanged += ServerFolder_CountChanged;
                 serverFolder.Opened += ServerFolder_Opened;
                 serverFolder.UnreadChanged += ServerFolder_UnreadChanged;
 
-                await serverFolder.SubscribeAsync();
-
-                await ReadSubFolders(node);
+                await ReadSubFolders(node).ConfigureAwait(false);
             }
         }
 
         private void ServerFolder_UnreadChanged(object sender, EventArgs e)
         {
             NewLogMessage?.Invoke(this, $"{DateTime.Now}: New Unread message.");
+
         }
 
         private void ServerFolder_Opened(object sender, EventArgs e)
@@ -166,6 +184,7 @@ namespace MailClient.MailWrapper
         private void ServerFolder_CountChanged(object sender, EventArgs e)
         {
             NewLogMessage?.Invoke(this, $"{DateTime.Now}: Message count changed.");
+            messagesArrived = true;
         }
 
         private void ServerFolder_MessageFlagsChanged(object sender, MessageFlagsChangedEventArgs e)
@@ -177,7 +196,7 @@ namespace MailClient.MailWrapper
         {
             if (!folders.TryGetValue(rootFolder, out var folder)) return;
 
-            if (!folder.IsOpen) folder.Open(FolderAccess.ReadWrite);
+            await folder.OpenAsync(FolderAccess.ReadWrite);
 
             var mailsTask =folder.FetchAsync(0, -1, SummaryItems);
 
@@ -194,6 +213,7 @@ namespace MailClient.MailWrapper
 
                 rootFolder.Nodes.Add(subNode);
             }
+            await folder.CloseAsync().ConfigureAwait(false);
         }
 
         public async Task AddFolder(TreeNode rootFolder)
@@ -206,10 +226,6 @@ namespace MailClient.MailWrapper
         public async Task<TreeNode> AddFolderAsync(IMailFolder rootFolder)
         {
             if (rootFolder == null) return default;
-
-            if (rootFolder.IsOpen) await rootFolder.CloseAsync();
-
-            await rootFolder.OpenAsync(FolderAccess.ReadWrite);
 
             var newFolder =await rootFolder.CreateAsync("NewFolder", true);
             var node = new TreeNode() { Text = newFolder.Name, Tag = newFolder };
@@ -229,6 +245,8 @@ namespace MailClient.MailWrapper
 
         public void RenderMailMessage(IMailFolder mailFolder, IMessageSummary messageInfo)
         {
+            if (!mailFolder.IsOpen) mailFolder.Open(FolderAccess.ReadWrite);
+
             MailRender mailRender = new MailRender();
 
             mailRender.RenderAsync(mailFolder, messageInfo.UniqueId, messageInfo.Body)
@@ -253,6 +271,32 @@ namespace MailClient.MailWrapper
                 {
                     mailFolder.RemoveFlagsAsync(messageInfo.UniqueId, MessageFlags.Seen, true);
                 }
+        }
+
+        public async Task WaitForNewMessagesAsync()
+        {
+            //Client.NotifyAsync(true);
+
+
+            //if (Client.Capabilities.HasFlag(ImapCapabilities.Idle))
+            //{
+            //    using (done = new CancellationTokenSource(new TimeSpan(0, 0, 10)))
+            //        await Client.IdleAsync(done.Token, cancel.Token);
+            //}
+            //else
+            //{
+            //    await Task.Delay(new TimeSpan(0, 0, 10), cancel.Token);
+            //    await Client.NoOpAsync(cancel.Token);
+            //}
+        }
+
+        public bool IsFolder(TreeNode item)
+        {
+            return folders.Keys.Contains(item);
+        }
+        public bool IsMessage(TreeNode item)
+        {
+            return messages.Keys.Contains(item);
         }
     }
 }

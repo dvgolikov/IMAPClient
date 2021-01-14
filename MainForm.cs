@@ -91,6 +91,7 @@ namespace MailClient
             if (SelectedTreeNode.Tag is IMessageSummary messageInfo)
             {
                 if (!(SelectedTreeNode.Parent.Tag is IMailFolder mailFolder)) return;
+
                 mailClient.RenderMailMessage(mailFolder, messageInfo);
 
                 return;
@@ -139,6 +140,11 @@ namespace MailClient
         private void DeleteMessageButton_Click(object sender, EventArgs e)
         {
 
+        }
+
+        private void checkButton_Click(object sender, EventArgs e)
+        {
+            mailClient.WaitForNewMessagesAsync().ConfigureAwait(false);
         }
     }
 }
