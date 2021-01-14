@@ -47,13 +47,16 @@ namespace MailClient
 
         private void MailClient_UpdateWebBrowser(object sender, string e)
         {
-            webBrowser.DocumentText = e;
+            this.BeginInvoke(new Action(() =>
+            {
+                webBrowser.DocumentText = e;
+            }));
+
         }
 
         private void MailClient_UpdateFoldersTree(object sender, TreeNode e)
         {
-            _ = this.BeginInvoke(
-                new Action(() =>
+            this.BeginInvoke(new Action(() =>
                 {
                     MailTreeView.Nodes.Clear();
                     MailTreeView.Nodes.Add(e);
@@ -84,6 +87,7 @@ namespace MailClient
         private void MailTreeView_AfterSelect(object sender, TreeViewEventArgs e)
         {
             SelectedTreeNode = e.Node;
+            if (SelectedTreeNode.Name == "root") return;
             if (SelectedTreeNode.Tag is IMessageSummary messageInfo)
             {
                 if (!(SelectedTreeNode.Parent.Tag is IMailFolder mailFolder)) return;
@@ -94,6 +98,8 @@ namespace MailClient
 
             if (SelectedTreeNode.Tag is IMailFolder folder)
             {
+                SelectedTreeNode.Nodes.Clear();
+
                 mailClient.ReadMails(SelectedTreeNode);
             }
             
@@ -113,12 +119,26 @@ namespace MailClient
             LoginTextBox.Enabled = !State;
             PasswordTextBox.Enabled = !State;
             ConnectButton.Enabled = !State;
-            DisconnectButton.Enabled = State;
         }
 
         private void DeleteButton_Click(object sender, EventArgs e)
         {
             mailClient.Detete(SelectedTreeNode);
+        }
+
+        private void SetReadedButton_Click(object sender, EventArgs e)
+        {
+            mailClient.SetMessageAsReaded(SelectedTreeNode);
+        }
+
+        private void SetUnReadedButton_Click(object sender, EventArgs e)
+        {
+            mailClient.SetMessageAsUnRead(SelectedTreeNode);
+        }
+
+        private void DeleteMessageButton_Click(object sender, EventArgs e)
+        {
+
         }
     }
 }

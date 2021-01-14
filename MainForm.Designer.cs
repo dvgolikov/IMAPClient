@@ -30,7 +30,6 @@ namespace MailClient
         private void InitializeComponent()
         {
             this.ConnectButton = new System.Windows.Forms.Button();
-            this.DisconnectButton = new System.Windows.Forms.Button();
             this.ServerTextBox = new System.Windows.Forms.TextBox();
             this.PortTextBox = new System.Windows.Forms.TextBox();
             this.LoginTextBox = new System.Windows.Forms.TextBox();
@@ -46,6 +45,9 @@ namespace MailClient
             this.AddMailButton = new System.Windows.Forms.Button();
             this.DeleteButton = new System.Windows.Forms.Button();
             this.connectedStatusLabel = new System.Windows.Forms.Label();
+            this.SetReadedButton = new System.Windows.Forms.Button();
+            this.SetUnReadedButton = new System.Windows.Forms.Button();
+            this.DeleteMessageButton = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // ConnectButton
@@ -58,16 +60,6 @@ namespace MailClient
             this.ConnectButton.Text = "Connect";
             this.ConnectButton.UseVisualStyleBackColor = true;
             this.ConnectButton.Click += new System.EventHandler(this.ConnectButton_ClickAsync);
-            // 
-            // DisconnectButton
-            // 
-            this.DisconnectButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.DisconnectButton.Location = new System.Drawing.Point(1177, 12);
-            this.DisconnectButton.Name = "DisconnectButton";
-            this.DisconnectButton.Size = new System.Drawing.Size(75, 23);
-            this.DisconnectButton.TabIndex = 1;
-            this.DisconnectButton.Text = "Disconnect";
-            this.DisconnectButton.UseVisualStyleBackColor = true;
             // 
             // ServerTextBox
             // 
@@ -153,6 +145,7 @@ namespace MailClient
             this.logBox.Location = new System.Drawing.Point(12, 515);
             this.logBox.Multiline = true;
             this.logBox.Name = "logBox";
+            this.logBox.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
             this.logBox.Size = new System.Drawing.Size(1240, 62);
             this.logBox.TabIndex = 11;
             // 
@@ -161,15 +154,15 @@ namespace MailClient
             this.webBrowser.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.webBrowser.Location = new System.Drawing.Point(421, 41);
+            this.webBrowser.Location = new System.Drawing.Point(421, 76);
             this.webBrowser.MinimumSize = new System.Drawing.Size(20, 20);
             this.webBrowser.Name = "webBrowser";
-            this.webBrowser.Size = new System.Drawing.Size(831, 468);
+            this.webBrowser.Size = new System.Drawing.Size(831, 433);
             this.webBrowser.TabIndex = 12;
             // 
             // AddFolderButton
             // 
-            this.AddFolderButton.Location = new System.Drawing.Point(177, 47);
+            this.AddFolderButton.Location = new System.Drawing.Point(153, 47);
             this.AddFolderButton.Name = "AddFolderButton";
             this.AddFolderButton.Size = new System.Drawing.Size(75, 23);
             this.AddFolderButton.TabIndex = 13;
@@ -179,7 +172,7 @@ namespace MailClient
             // 
             // AddMailButton
             // 
-            this.AddMailButton.Location = new System.Drawing.Point(258, 47);
+            this.AddMailButton.Location = new System.Drawing.Point(234, 47);
             this.AddMailButton.Name = "AddMailButton";
             this.AddMailButton.Size = new System.Drawing.Size(75, 23);
             this.AddMailButton.TabIndex = 14;
@@ -188,11 +181,11 @@ namespace MailClient
             // 
             // DeleteButton
             // 
-            this.DeleteButton.Location = new System.Drawing.Point(339, 47);
+            this.DeleteButton.Location = new System.Drawing.Point(315, 47);
             this.DeleteButton.Name = "DeleteButton";
-            this.DeleteButton.Size = new System.Drawing.Size(75, 23);
+            this.DeleteButton.Size = new System.Drawing.Size(100, 23);
             this.DeleteButton.TabIndex = 15;
-            this.DeleteButton.Text = "Delete";
+            this.DeleteButton.Text = "Delete Folder";
             this.DeleteButton.UseVisualStyleBackColor = true;
             this.DeleteButton.Click += new System.EventHandler(this.DeleteButton_Click);
             // 
@@ -205,11 +198,44 @@ namespace MailClient
             this.connectedStatusLabel.TabIndex = 16;
             this.connectedStatusLabel.Text = "Connected";
             // 
+            // SetReadedButton
+            // 
+            this.SetReadedButton.Location = new System.Drawing.Point(421, 47);
+            this.SetReadedButton.Name = "SetReadedButton";
+            this.SetReadedButton.Size = new System.Drawing.Size(100, 23);
+            this.SetReadedButton.TabIndex = 17;
+            this.SetReadedButton.Text = "Set as Readed";
+            this.SetReadedButton.UseVisualStyleBackColor = true;
+            this.SetReadedButton.Click += new System.EventHandler(this.SetReadedButton_Click);
+            // 
+            // SetUnReadedButton
+            // 
+            this.SetUnReadedButton.Location = new System.Drawing.Point(527, 47);
+            this.SetUnReadedButton.Name = "SetUnReadedButton";
+            this.SetUnReadedButton.Size = new System.Drawing.Size(100, 23);
+            this.SetUnReadedButton.TabIndex = 18;
+            this.SetUnReadedButton.Text = "Set as UnReaded";
+            this.SetUnReadedButton.UseVisualStyleBackColor = true;
+            this.SetUnReadedButton.Click += new System.EventHandler(this.SetUnReadedButton_Click);
+            // 
+            // DeleteMessageButton
+            // 
+            this.DeleteMessageButton.Location = new System.Drawing.Point(633, 47);
+            this.DeleteMessageButton.Name = "DeleteMessageButton";
+            this.DeleteMessageButton.Size = new System.Drawing.Size(100, 23);
+            this.DeleteMessageButton.TabIndex = 19;
+            this.DeleteMessageButton.Text = "Delete Message";
+            this.DeleteMessageButton.UseVisualStyleBackColor = true;
+            this.DeleteMessageButton.Click += new System.EventHandler(this.DeleteMessageButton_Click);
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1264, 589);
+            this.Controls.Add(this.DeleteMessageButton);
+            this.Controls.Add(this.SetUnReadedButton);
+            this.Controls.Add(this.SetReadedButton);
             this.Controls.Add(this.connectedStatusLabel);
             this.Controls.Add(this.DeleteButton);
             this.Controls.Add(this.AddMailButton);
@@ -225,7 +251,6 @@ namespace MailClient
             this.Controls.Add(this.LoginTextBox);
             this.Controls.Add(this.PortTextBox);
             this.Controls.Add(this.ServerTextBox);
-            this.Controls.Add(this.DisconnectButton);
             this.Controls.Add(this.ConnectButton);
             this.Name = "MainForm";
             this.Text = "IMAP Client";
@@ -238,7 +263,6 @@ namespace MailClient
         #endregion
 
         private System.Windows.Forms.Button ConnectButton;
-        private System.Windows.Forms.Button DisconnectButton;
         private System.Windows.Forms.TextBox ServerTextBox;
         private System.Windows.Forms.TextBox PortTextBox;
         private System.Windows.Forms.TextBox LoginTextBox;
@@ -254,6 +278,9 @@ namespace MailClient
         private System.Windows.Forms.Button AddMailButton;
         private System.Windows.Forms.Button DeleteButton;
         private System.Windows.Forms.Label connectedStatusLabel;
+        private System.Windows.Forms.Button SetReadedButton;
+        private System.Windows.Forms.Button SetUnReadedButton;
+        private System.Windows.Forms.Button DeleteMessageButton;
     }
 }
 

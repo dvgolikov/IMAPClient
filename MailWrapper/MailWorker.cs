@@ -14,8 +14,8 @@ namespace MailClient.MailWrapper
 {
     class MailWorker
     {
-        private readonly Font RegularFont = new Font(FontFamily.GenericSansSerif, 10f, FontStyle.Regular);
-        private readonly Font BoldFont = new Font(FontFamily.GenericSansSerif, 10f, FontStyle.Bold);
+        private readonly Font RegularFont = new Font("Arial", 8f, FontStyle.Regular);
+        private readonly Font BoldFont = new Font("Arial", 8f, FontStyle.Bold);
 
         const MessageSummaryItems SummaryItems = MessageSummaryItems.UniqueId | MessageSummaryItems.Envelope | MessageSummaryItems.Flags | MessageSummaryItems.BodyStructure;
 
@@ -62,22 +62,23 @@ namespace MailClient.MailWrapper
 
         private void Client_Connected(object sender, ConnectedEventArgs e)
         {
-            NewLogMessage?.Invoke(this, $"{DateTime.Now}: {e}");
+            NewLogMessage?.Invoke(this, $"{DateTime.Now}: Connected.");
 
             ConnectionState(this, true);
         }
 
-        private async void OnClientDisconnected(object sender, DisconnectedEventArgs e)
+        private void OnClientDisconnected(object sender, DisconnectedEventArgs e)
         {
             ConnectionState(this, false);
-            NewLogMessage?.Invoke(this, $"{DateTime.Now}: {e.ToString()}");
+            NewLogMessage?.Invoke(this, $"{DateTime.Now}: Disconected.");
             if (!e.IsRequested) workLoad.Add(ReconnectAsync(e.Host, e.Port, e.Options));
         }
 
         public async Task ReconnectAsync(string host, int port, SecureSocketOptions options)
         {
-            // Note: for demo purposes, we're ignoring SSL validation errors (don't do this in production code)
+            // TODO: SSL validation
             Client.ServerCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true;
+
             try
             {
                 await Client.ConnectAsync(host, port, options);
@@ -93,10 +94,11 @@ namespace MailClient.MailWrapper
                 await Client.EnableUTF8Async();
 
             folders = new Dictionary<TreeNode, IMailFolder>();
+            var folder = Client.GetFolder(Client.PersonalNamespaces[0]);
 
-            var root = new TreeNode() { Name = "root", Text = host, Tag = Client.GetFolder(Client.PersonalNamespaces[0]) };
+            var root = new TreeNode() { Name = "root", Text = host, Tag = folder };
 
-            folders.Add(root, root.Tag as IMailFolder);
+            folders.Add(root, folder);
 
             await ReadSubFolders(root).ConfigureAwait(false);
 
@@ -139,16 +141,36 @@ namespace MailClient.MailWrapper
                 folders.Add(node, serverFolder);
                 rootFolder.Nodes.Add(node);
 
-                serverFolder.MessageFlagsChanged += UpdateMailFolders;
-                serverFolder.CountChanged += UpdateMailFolders;
+                serverFolder.MessageFlagsChanged += ServerFolder_MessageFlagsChanged;
+                serverFolder.CountChanged += ServerFolder_CountChanged;
+                serverFolder.Opened += ServerFolder_Opened;
+                serverFolder.UnreadChanged += ServerFolder_UnreadChanged;
+
+                await serverFolder.SubscribeAsync();
 
                 await ReadSubFolders(node);
             }
         }
 
-        private void UpdateMailFolders(object sender, EventArgs e)
+        private void ServerFolder_UnreadChanged(object sender, EventArgs e)
         {
-            NewLogMessage?.Invoke(this, $"{DateTime.Now}: {e}"); ;
+            NewLogMessage?.Invoke(this, $"{DateTime.Now}: New Unread message.");
+        }
+
+        private void ServerFolder_Opened(object sender, EventArgs e)
+        {
+            if(sender is IMailFolder mailFolder) NewLogMessage?.Invoke(this, $"{DateTime.Now}: {mailFolder.FullName} folder openned");
+            else NewLogMessage?.Invoke(this, $"{DateTime.Now}: Uncnown folder openned");
+        }
+
+        private void ServerFolder_CountChanged(object sender, EventArgs e)
+        {
+            NewLogMessage?.Invoke(this, $"{DateTime.Now}: Message count changed.");
+        }
+
+        private void ServerFolder_MessageFlagsChanged(object sender, MessageFlagsChangedEventArgs e)
+        {
+            NewLogMessage?.Invoke(this, $"{DateTime.Now}: Message Number: {e.Index} flags changed."); 
         }
 
         public async Task ReadMails(TreeNode rootFolder)
@@ -162,6 +184,11 @@ namespace MailClient.MailWrapper
             foreach (var message in await mailsTask)
             {
                 var subNode = new TreeNode(message.Envelope.Subject);
+
+                if (!message.Flags.Value.HasFlag(MessageFlags.Seen))
+                    subNode.NodeFont = BoldFont;
+                else
+                    subNode.NodeFont = RegularFont;
 
                 subNode.Tag = message;
 
@@ -209,6 +236,23 @@ namespace MailClient.MailWrapper
                 {
                     UpdateWebBrowser(this, t.Result);
                 });
+        }
+
+        public void SetMessageAsReaded(TreeNode treeNode)
+        {
+            if (treeNode.Tag is IMessageSummary messageInfo)
+                if (treeNode.Parent.Tag is IMailFolder mailFolder)
+                {
+                    mailFolder.AddFlagsAsync(messageInfo.UniqueId, MessageFlags.Seen, true);
+                }
+        }
+        public void SetMessageAsUnRead(TreeNode treeNode)
+        {
+            if (treeNode.Tag is IMessageSummary messageInfo)
+                if (treeNode.Parent.Tag is IMailFolder mailFolder)
+                {
+                    mailFolder.RemoveFlagsAsync(messageInfo.UniqueId, MessageFlags.Seen, true);
+                }
         }
     }
 }
