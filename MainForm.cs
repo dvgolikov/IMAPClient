@@ -99,8 +99,6 @@ namespace MailClient
 
             if (SelectedTreeNode.Tag is IMailFolder folder)
             {
-                SelectedTreeNode.Nodes.Clear();
-
                 mailClient.ReadMails(SelectedTreeNode);
             }
             

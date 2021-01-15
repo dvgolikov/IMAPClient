@@ -19,6 +19,8 @@ namespace MailClient.MailWrapper
         CancellationTokenSource cancel;
         CancellationTokenSource done;
 
+        private TreeNode rootNode;
+
         private readonly Font RegularFont = new Font("Arial", 8f, FontStyle.Regular);
         private readonly Font BoldFont = new Font("Arial", 8f, FontStyle.Bold);
 
@@ -34,9 +36,7 @@ namespace MailClient.MailWrapper
         private readonly ICredentials Credentials;
         private readonly string host;
         private readonly int port;
-        private Dictionary<TreeNode, IMailFolder> folders;
-        private Dictionary<TreeNode, IMessageSummary> messages;
-        private bool messagesArrived;
+        private Dictionary<IMailFolder, TreeNode> folders;
         private readonly List<Task> workLoad;
 
         public MailWorker(ICredentials credentials, string server, int prt)
@@ -48,9 +48,15 @@ namespace MailClient.MailWrapper
             Client.Connected += Client_Connected;
             Client.Alert += Client_Alert;
             Client.MetadataChanged += Client_MetadataChanged;
+            
             options = SecureSocketOptions.SslOnConnect;
             workLoad = new List<Task>();
             cancel = new CancellationTokenSource();
+        }
+
+        private void Inbox_CountChanged(object sender, EventArgs e)
+        {
+            NewLogMessage?.Invoke(this, $"{DateTime.Now}: New Message detected.");
         }
 
         public void ConnectToServer()
@@ -92,6 +98,9 @@ namespace MailClient.MailWrapper
                 await Client.ConnectAsync(host, port, options);
 
                 await Client.AuthenticateAsync(Credentials);
+
+                await Client.Inbox.OpenAsync(FolderAccess.ReadWrite);
+                Client.Inbox.CountChanged += Inbox_CountChanged;
             }
             catch(Exception ex)
             {
@@ -101,78 +110,85 @@ namespace MailClient.MailWrapper
             if (Client.Capabilities.HasFlag(ImapCapabilities.UTF8Accept))
                 await Client.EnableUTF8Async();
 
-            folders = new Dictionary<TreeNode, IMailFolder>();
-            messages = new Dictionary<TreeNode, IMessageSummary>();
+            folders = new Dictionary<IMailFolder, TreeNode>();
 
             var folder = Client.GetFolder(Client.PersonalNamespaces[0]);
 
-            var root = new TreeNode() { Name = "root", Text = host, Tag = folder };
+            rootNode = new TreeNode() { Name = "root", Text = host, Tag = folder };
 
-            folders.Add(root, folder);
+            folders.Add(folder, rootNode);
 
             Stopwatch stopWhatch = new Stopwatch();
             stopWhatch.Start();
 
-            await ReadSubFolders(root).ConfigureAwait(false);
+            await ReadSubFolders(rootNode).ConfigureAwait(false);
 
             stopWhatch.Stop();
             NewLogMessage?.Invoke(this, $"{DateTime.Now}: {host} folders readed by {stopWhatch.ElapsedMilliseconds} ms.");
 
-            UpdateFoldersTree?.Invoke(this, folders.Keys.Where(x => x.Name == "root").FirstOrDefault());
+            UpdateFoldersTree?.Invoke(this, rootNode);
         }
 
         public async Task ReadSubFolders(TreeNode rootFolder)
         {
-
-            if (!folders.TryGetValue(rootFolder, out var rootMailFolder)) return;
+            if (!(rootFolder.Tag is IMailFolder rootMailFolder)) return;
 
             var serverFolders= await rootMailFolder.GetSubfoldersAsync();
 
             foreach (var serverFolder in serverFolders)
             {
-                await serverFolder.OpenAsync(FolderAccess.ReadWrite);
+                if(!await OpenMailFolder(serverFolder)) return;
+
                 await serverFolder.StatusAsync(StatusItems.Unread| StatusItems.Count);
 
-                var node = new TreeNode
-                {
-                    Tag = serverFolder
-                };
+                var nodeTree = CreateOrUppdate(serverFolder);
 
-                if (serverFolder.Count>0)
-                {
-                    if (serverFolder.Unread > 0)
-                    {
-                        node.Text = $"{serverFolder.Name} M:{serverFolder.Count}/U:{serverFolder.Unread}";
-                        node.NodeFont = BoldFont;
-                    }
-                    else
-                    {
-                        node.Text = $"{serverFolder.Name} M:{serverFolder.Count}";
-                        node.NodeFont = RegularFont;
-                    }
-                }
-                else
-                {
-                    node.Text = $"{serverFolder.Name}";
-                    node.NodeFont = RegularFont;
-                }
-
-                folders.Add(node, serverFolder);
-                rootFolder.Nodes.Add(node);
+                rootFolder.Nodes.Add(nodeTree);
                 
                 serverFolder.MessageFlagsChanged += ServerFolder_MessageFlagsChanged;
                 serverFolder.CountChanged += ServerFolder_CountChanged;
                 serverFolder.Opened += ServerFolder_Opened;
                 serverFolder.UnreadChanged += ServerFolder_UnreadChanged;
 
-                await ReadSubFolders(node).ConfigureAwait(false);
+                await ReadSubFolders(nodeTree).ConfigureAwait(false);
             }
+        }
+
+        public TreeNode CreateOrUppdate(IMailFolder folder)
+        {
+            if (!folders.TryGetValue(folder, out var treeNode))
+            {
+                treeNode = new TreeNode { Tag = folder };
+                folders.Add(folder, treeNode);
+            }
+
+            if (folder.Count > 0)
+            {
+                if (folder.Unread > 0)
+                {
+                    treeNode.Text = $"{folder.Name} M:{folder.Count}/U:{folder.Unread}";
+                    treeNode.NodeFont = BoldFont;
+                }
+                else
+                {
+                    treeNode.Text = $"{folder.Name} M:{folder.Count}";
+                    treeNode.NodeFont = RegularFont;
+                }
+            }
+            else
+            {
+                treeNode.Text = $"{folder.Name}";
+                treeNode.NodeFont = RegularFont;
+            }
+
+            return treeNode;
         }
 
         private void ServerFolder_UnreadChanged(object sender, EventArgs e)
         {
             NewLogMessage?.Invoke(this, $"{DateTime.Now}: New Unread message.");
-
+            if (sender is IMailFolder rootMailFolder)
+                CreateOrUppdate(rootMailFolder);
         }
 
         private void ServerFolder_Opened(object sender, EventArgs e)
@@ -184,63 +200,92 @@ namespace MailClient.MailWrapper
         private void ServerFolder_CountChanged(object sender, EventArgs e)
         {
             NewLogMessage?.Invoke(this, $"{DateTime.Now}: Message count changed.");
-            messagesArrived = true;
+            if (sender is IMailFolder rootMailFolder)
+                CreateOrUppdate(rootMailFolder);
         }
 
         private void ServerFolder_MessageFlagsChanged(object sender, MessageFlagsChangedEventArgs e)
         {
-            NewLogMessage?.Invoke(this, $"{DateTime.Now}: Message Number: {e.Index} flags changed."); 
+            NewLogMessage?.Invoke(this, $"{DateTime.Now}: Message Number: {e.Index} flags changed.");
+            if (sender is IMailFolder rootMailFolder)
+                CreateOrUppdate(rootMailFolder);
         }
 
         public async Task ReadMails(TreeNode rootFolder)
         {
-            if (!folders.TryGetValue(rootFolder, out var folder)) return;
+            if (!(rootFolder.Tag is IMailFolder rootMailFolder)) return;
 
-            await folder.OpenAsync(FolderAccess.ReadWrite);
+            if (!await OpenMailFolder(rootMailFolder)) return;
 
-            var mailsTask =folder.FetchAsync(0, -1, SummaryItems);
+            Stopwatch stopWhatch = new Stopwatch();
+            stopWhatch.Start();
+
+            var mailsTask = rootMailFolder.FetchAsync(0, -1, SummaryItems);
 
             foreach (var message in await mailsTask)
             {
-                var subNode = new TreeNode(message.Envelope.Subject);
+                TreeNode messageNode;
 
-                if (!message.Flags.Value.HasFlag(MessageFlags.Seen))
-                    subNode.NodeFont = BoldFont;
-                else
-                    subNode.NodeFont = RegularFont;
+                if (!rootFolder.Nodes.ContainsKey(message.UniqueId.Id.ToString()))
+                {
+                    messageNode = new TreeNode { Text = message.Envelope.Subject, Name= message.UniqueId.Id.ToString(), Tag= message };
 
-                subNode.Tag = message;
+                    rootFolder.Nodes.Add(messageNode);
+                }
+                else messageNode = rootFolder.Nodes[message.UniqueId.Id.ToString()];
 
-                rootFolder.Nodes.Add(subNode);
+                if (!message.Flags.Value.HasFlag(MessageFlags.Seen)) messageNode.NodeFont = BoldFont;
+                else messageNode.NodeFont = RegularFont;
             }
-            await folder.CloseAsync().ConfigureAwait(false);
+
+            stopWhatch.Stop();
+            NewLogMessage?.Invoke(this, $"{DateTime.Now}: {rootMailFolder.Name} folders mail readed by {stopWhatch.ElapsedMilliseconds} ms.");
         }
 
-        public async Task AddFolder(TreeNode rootFolder)
+        public async Task<bool> OpenMailFolder(IMailFolder folder)
         {
-            if (!folders.TryGetValue(rootFolder, out var folder)) return;
-
-            rootFolder.Nodes.Add(await AddFolderAsync(folder));
+            try
+            {
+                if (!folder.IsOpen) await folder.OpenAsync(FolderAccess.ReadWrite);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                NewLogMessage?.Invoke(this, $"{DateTime.Now}: ReadMails Exception: {ex.Message}.");
+            }
+            return false;
         }
 
-        public async Task<TreeNode> AddFolderAsync(IMailFolder rootFolder)
+        public async Task AddFolder(TreeNode rootFolder, string name="NewFolder")
         {
-            if (rootFolder == null) return default;
+            if (!(rootFolder.Tag is IMailFolder rootMailFolder)) return;
 
-            var newFolder =await rootFolder.CreateAsync("NewFolder", true);
-            var node = new TreeNode() { Text = newFolder.Name, Tag = newFolder };
+            var newMailFolder = await rootMailFolder.CreateAsync(name, true);
+            var newNode = new TreeNode() { Text = name, Tag = newMailFolder };
 
-            folders.Add(node, newFolder);
-
-            return node;
+            folders.Add(newMailFolder, newNode);
+            rootFolder.Nodes.Add(newNode);
         }
+
         public async Task Detete(TreeNode rootFolder)
         {
-            if (!folders.TryGetValue(rootFolder, out var folder)) return;
+            if ((rootFolder.Tag is IMailFolder rootMailFolder))
+            {
+                await rootMailFolder.DeleteAsync();
 
-            await folder.DeleteAsync();
+                rootFolder.Remove();
 
-            rootFolder.Remove();
+                return;
+            }
+            if ((rootFolder.Tag is IMessageSummary messageInfo))
+            {
+                if (!(rootFolder.Parent.Tag is IMailFolder parentMailFolder)) return;
+                await parentMailFolder.AddFlagsAsync(messageInfo.UniqueId, MessageFlags.Deleted, true);
+
+                rootFolder.Remove();
+            }
+
+
         }
 
         public void RenderMailMessage(IMailFolder mailFolder, IMessageSummary messageInfo)
@@ -256,47 +301,43 @@ namespace MailClient.MailWrapper
                 });
         }
 
-        public void SetMessageAsReaded(TreeNode treeNode)
+        public async Task SetMessageAsReaded(TreeNode treeNode)
         {
             if (treeNode.Tag is IMessageSummary messageInfo)
                 if (treeNode.Parent.Tag is IMailFolder mailFolder)
                 {
-                    mailFolder.AddFlagsAsync(messageInfo.UniqueId, MessageFlags.Seen, true);
+                    await mailFolder.AddFlagsAsync(messageInfo.UniqueId, MessageFlags.Seen, true);
+
+                    CreateOrUppdate(mailFolder);
+
+                    await ReadMails(treeNode.Parent);
                 }
         }
-        public void SetMessageAsUnRead(TreeNode treeNode)
+        public async Task SetMessageAsUnRead(TreeNode treeNode)
         {
             if (treeNode.Tag is IMessageSummary messageInfo)
                 if (treeNode.Parent.Tag is IMailFolder mailFolder)
                 {
-                    mailFolder.RemoveFlagsAsync(messageInfo.UniqueId, MessageFlags.Seen, true);
+                    await mailFolder.RemoveFlagsAsync(messageInfo.UniqueId, MessageFlags.Seen, true);
+
+                    CreateOrUppdate(mailFolder);
+
+                    await ReadMails(treeNode.Parent);
                 }
         }
 
         public async Task WaitForNewMessagesAsync()
         {
-            //Client.NotifyAsync(true);
-
-
-            //if (Client.Capabilities.HasFlag(ImapCapabilities.Idle))
-            //{
-            //    using (done = new CancellationTokenSource(new TimeSpan(0, 0, 10)))
-            //        await Client.IdleAsync(done.Token, cancel.Token);
-            //}
-            //else
-            //{
-            //    await Task.Delay(new TimeSpan(0, 0, 10), cancel.Token);
-            //    await Client.NoOpAsync(cancel.Token);
-            //}
-        }
-
-        public bool IsFolder(TreeNode item)
-        {
-            return folders.Keys.Contains(item);
-        }
-        public bool IsMessage(TreeNode item)
-        {
-            return messages.Keys.Contains(item);
+            if (Client.Capabilities.HasFlag(ImapCapabilities.Idle))
+            {
+                using (done = new CancellationTokenSource(new TimeSpan(0, 9, 0)))
+                    await Client.IdleAsync(done.Token, cancel.Token);
+            }
+            else
+            {
+                await Task.Delay(new TimeSpan(0, 1, 0), cancel.Token);
+                await Client.NoOpAsync(cancel.Token);
+            }
         }
     }
 }

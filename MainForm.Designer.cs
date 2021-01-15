@@ -47,7 +47,6 @@ namespace MailClient
             this.connectedStatusLabel = new System.Windows.Forms.Label();
             this.SetReadedButton = new System.Windows.Forms.Button();
             this.SetUnReadedButton = new System.Windows.Forms.Button();
-            this.DeleteMessageButton = new System.Windows.Forms.Button();
             this.checkButton = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
@@ -163,9 +162,9 @@ namespace MailClient
             // 
             // AddFolderButton
             // 
-            this.AddFolderButton.Location = new System.Drawing.Point(153, 47);
+            this.AddFolderButton.Location = new System.Drawing.Point(191, 47);
             this.AddFolderButton.Name = "AddFolderButton";
-            this.AddFolderButton.Size = new System.Drawing.Size(75, 23);
+            this.AddFolderButton.Size = new System.Drawing.Size(67, 23);
             this.AddFolderButton.TabIndex = 13;
             this.AddFolderButton.Text = "Add Folder";
             this.AddFolderButton.UseVisualStyleBackColor = true;
@@ -173,20 +172,20 @@ namespace MailClient
             // 
             // AddMailButton
             // 
-            this.AddMailButton.Location = new System.Drawing.Point(234, 47);
+            this.AddMailButton.Location = new System.Drawing.Point(264, 47);
             this.AddMailButton.Name = "AddMailButton";
-            this.AddMailButton.Size = new System.Drawing.Size(75, 23);
+            this.AddMailButton.Size = new System.Drawing.Size(64, 23);
             this.AddMailButton.TabIndex = 14;
             this.AddMailButton.Text = "Add Mail";
             this.AddMailButton.UseVisualStyleBackColor = true;
             // 
             // DeleteButton
             // 
-            this.DeleteButton.Location = new System.Drawing.Point(315, 47);
+            this.DeleteButton.Location = new System.Drawing.Point(334, 47);
             this.DeleteButton.Name = "DeleteButton";
-            this.DeleteButton.Size = new System.Drawing.Size(100, 23);
+            this.DeleteButton.Size = new System.Drawing.Size(81, 23);
             this.DeleteButton.TabIndex = 15;
-            this.DeleteButton.Text = "Delete Folder";
+            this.DeleteButton.Text = "Delete";
             this.DeleteButton.UseVisualStyleBackColor = true;
             this.DeleteButton.Click += new System.EventHandler(this.DeleteButton_Click);
             // 
@@ -219,23 +218,13 @@ namespace MailClient
             this.SetUnReadedButton.UseVisualStyleBackColor = true;
             this.SetUnReadedButton.Click += new System.EventHandler(this.SetUnReadedButton_Click);
             // 
-            // DeleteMessageButton
-            // 
-            this.DeleteMessageButton.Location = new System.Drawing.Point(633, 47);
-            this.DeleteMessageButton.Name = "DeleteMessageButton";
-            this.DeleteMessageButton.Size = new System.Drawing.Size(100, 23);
-            this.DeleteMessageButton.TabIndex = 19;
-            this.DeleteMessageButton.Text = "Delete Message";
-            this.DeleteMessageButton.UseVisualStyleBackColor = true;
-            this.DeleteMessageButton.Click += new System.EventHandler(this.DeleteMessageButton_Click);
-            // 
             // checkButton
             // 
-            this.checkButton.Location = new System.Drawing.Point(72, 47);
+            this.checkButton.Location = new System.Drawing.Point(110, 47);
             this.checkButton.Name = "checkButton";
             this.checkButton.Size = new System.Drawing.Size(75, 23);
             this.checkButton.TabIndex = 20;
-            this.checkButton.Text = "Check";
+            this.checkButton.Text = "Idle State";
             this.checkButton.UseVisualStyleBackColor = true;
             this.checkButton.Click += new System.EventHandler(this.checkButton_Click);
             // 
@@ -245,7 +234,6 @@ namespace MailClient
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1264, 589);
             this.Controls.Add(this.checkButton);
-            this.Controls.Add(this.DeleteMessageButton);
             this.Controls.Add(this.SetUnReadedButton);
             this.Controls.Add(this.SetReadedButton);
             this.Controls.Add(this.connectedStatusLabel);
@@ -292,7 +280,6 @@ namespace MailClient
         private System.Windows.Forms.Label connectedStatusLabel;
         private System.Windows.Forms.Button SetReadedButton;
         private System.Windows.Forms.Button SetUnReadedButton;
-        private System.Windows.Forms.Button DeleteMessageButton;
         private System.Windows.Forms.Button checkButton;
     }
 }
