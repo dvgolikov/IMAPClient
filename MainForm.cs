@@ -41,8 +41,13 @@ namespace MailClient
             mailClient.ConnectionState += MailClient_ConnectionState;
             mailClient.UpdateFoldersTree += MailClient_UpdateFoldersTree;
             mailClient.UpdateWebBrowser += MailClient_UpdateWebBrowser;
+            mailClient.UpdateForm += MailClient_UpdateForm;
+            mailClient.ReconnectAsync();
+        }
 
-            mailClient.ConnectToServer();
+        private void MailClient_UpdateForm(object sender, Action e)
+        {
+            this.BeginInvoke(e);
         }
 
         private void MailClient_UpdateWebBrowser(object sender, string e)
@@ -99,6 +104,7 @@ namespace MailClient
 
             if (SelectedTreeNode.Tag is IMailFolder folder)
             {
+
                 mailClient.ReadMails(SelectedTreeNode);
             }
             
@@ -106,7 +112,7 @@ namespace MailClient
 
         private void AddFolderButton_Click(object sender, EventArgs e)
         {
-            mailClient.AddFolder(SelectedTreeNode).ConfigureAwait(false);
+            mailClient.AddFolder(SelectedTreeNode);//.ConfigureAwait(false);
         }
 
         private void ChangeConnectedState(bool State)
@@ -142,7 +148,7 @@ namespace MailClient
 
         private void checkButton_Click(object sender, EventArgs e)
         {
-            mailClient.WaitForNewMessagesAsync().ConfigureAwait(false);
+            Task.Run(new Action(()=> { mailClient.WaitForNewMessagesAsync(); }));//.ConfigureAwait(false);
         }
     }
 }

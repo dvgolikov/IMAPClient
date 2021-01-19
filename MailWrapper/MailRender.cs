@@ -55,7 +55,6 @@ namespace MailClient.MailWrapper
 
 		public async Task<string> RenderMultipartRelatedAsync(IMailFolder folder, UniqueId uid, BodyPartMultipart bodyPart)
 		{
-			// download the entire multipart/related for simplicity since we'll probably end up needing all of the image attachments anyway...
 			var related = await folder.GetBodyPartAsync(uid, bodyPart) as MultipartRelated;
 
 			return RenderMultipartRelated(related);
@@ -72,7 +71,6 @@ namespace MailClient.MailWrapper
 				var converter = new FlowedToHtml();
 				string delsp;
 
-				// the delsp parameter specifies whether or not to delete spaces at the end of flowed lines
 				if (!text.ContentType.Parameters.TryGetValue("delsp", out delsp))
 					delsp = "no";
 

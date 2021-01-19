@@ -125,6 +125,7 @@ namespace MailClient
             // 
             this.PasswordTextBox.Location = new System.Drawing.Point(797, 15);
             this.PasswordTextBox.Name = "PasswordTextBox";
+            this.PasswordTextBox.PasswordChar = '*';
             this.PasswordTextBox.Size = new System.Drawing.Size(293, 20);
             this.PasswordTextBox.TabIndex = 9;
             // 
@@ -134,7 +135,7 @@ namespace MailClient
             | System.Windows.Forms.AnchorStyles.Left)));
             this.MailTreeView.Location = new System.Drawing.Point(12, 76);
             this.MailTreeView.Name = "MailTreeView";
-            this.MailTreeView.Size = new System.Drawing.Size(403, 433);
+            this.MailTreeView.Size = new System.Drawing.Size(403, 340);
             this.MailTreeView.TabIndex = 10;
             this.MailTreeView.AfterSelect += new System.Windows.Forms.TreeViewEventHandler(this.MailTreeView_AfterSelect);
             // 
@@ -142,11 +143,11 @@ namespace MailClient
             // 
             this.logBox.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.logBox.Location = new System.Drawing.Point(12, 515);
+            this.logBox.Location = new System.Drawing.Point(12, 422);
             this.logBox.Multiline = true;
             this.logBox.Name = "logBox";
             this.logBox.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.logBox.Size = new System.Drawing.Size(1240, 62);
+            this.logBox.Size = new System.Drawing.Size(1240, 155);
             this.logBox.TabIndex = 11;
             // 
             // webBrowser
@@ -157,7 +158,7 @@ namespace MailClient
             this.webBrowser.Location = new System.Drawing.Point(421, 76);
             this.webBrowser.MinimumSize = new System.Drawing.Size(20, 20);
             this.webBrowser.Name = "webBrowser";
-            this.webBrowser.Size = new System.Drawing.Size(831, 433);
+            this.webBrowser.Size = new System.Drawing.Size(831, 340);
             this.webBrowser.TabIndex = 12;
             // 
             // AddFolderButton

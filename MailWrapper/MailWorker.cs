@@ -30,6 +30,7 @@ namespace MailClient.MailWrapper
         public event EventHandler<bool> ConnectionState;
         public event EventHandler<TreeNode> UpdateFoldersTree;
         public event EventHandler<string> UpdateWebBrowser;
+        public event EventHandler<Action> UpdateForm;
 
         private readonly ImapClient Client = new ImapClient(new ProtocolLogger("imap.txt"));
         private SecureSocketOptions options = SecureSocketOptions.StartTlsWhenAvailable;
@@ -37,7 +38,6 @@ namespace MailClient.MailWrapper
         private readonly string host;
         private readonly int port;
         private Dictionary<IMailFolder, TreeNode> folders;
-        private readonly List<Task> workLoad;
 
         public MailWorker(ICredentials credentials, string server, int prt)
         {
@@ -50,18 +50,12 @@ namespace MailClient.MailWrapper
             Client.MetadataChanged += Client_MetadataChanged;
             
             options = SecureSocketOptions.SslOnConnect;
-            workLoad = new List<Task>();
             cancel = new CancellationTokenSource();
         }
 
-        private void Inbox_CountChanged(object sender, EventArgs e)
+        public void Close()
         {
-            NewLogMessage?.Invoke(this, $"{DateTime.Now}: New Message detected.");
-        }
-
-        public void ConnectToServer()
-        {
-            workLoad.Add(ReconnectAsync(host, port, options));
+            cancel?.Cancel();
         }
 
         private void Client_MetadataChanged(object sender, MetadataChangedEventArgs e)
@@ -85,10 +79,10 @@ namespace MailClient.MailWrapper
         {
             ConnectionState(this, false);
             NewLogMessage?.Invoke(this, $"{DateTime.Now}: Disconected.");
-            if (!e.IsRequested) workLoad.Add(ReconnectAsync(e.Host, e.Port, e.Options));
+            if (!e.IsRequested) ReconnectAsync();
         }
 
-        public async Task ReconnectAsync(string host, int port, SecureSocketOptions options)
+        public async Task ReconnectAsync()
         {
             // TODO: SSL validation
             Client.ServerCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true;
@@ -98,9 +92,6 @@ namespace MailClient.MailWrapper
                 await Client.ConnectAsync(host, port, options);
 
                 await Client.AuthenticateAsync(Credentials);
-
-                await Client.Inbox.OpenAsync(FolderAccess.ReadWrite);
-                Client.Inbox.CountChanged += Inbox_CountChanged;
             }
             catch(Exception ex)
             {
@@ -110,23 +101,26 @@ namespace MailClient.MailWrapper
             if (Client.Capabilities.HasFlag(ImapCapabilities.UTF8Accept))
                 await Client.EnableUTF8Async();
 
-            folders = new Dictionary<IMailFolder, TreeNode>();
+            if (folders == null)
+            {
+                folders = new Dictionary<IMailFolder, TreeNode>();
 
-            var folder = Client.GetFolder(Client.PersonalNamespaces[0]);
+                var folder = Client.GetFolder(Client.PersonalNamespaces[0]);
 
-            rootNode = new TreeNode() { Name = "root", Text = host, Tag = folder };
+                rootNode = new TreeNode() { Name = "root", Text = host, Tag = folder };
 
-            folders.Add(folder, rootNode);
+                folders.Add(folder, rootNode);
 
-            Stopwatch stopWhatch = new Stopwatch();
-            stopWhatch.Start();
+                Stopwatch stopWhatch = new Stopwatch();
+                stopWhatch.Start();
 
-            await ReadSubFolders(rootNode).ConfigureAwait(false);
+                await ReadSubFolders(rootNode);
 
-            stopWhatch.Stop();
-            NewLogMessage?.Invoke(this, $"{DateTime.Now}: {host} folders readed by {stopWhatch.ElapsedMilliseconds} ms.");
+                stopWhatch.Stop();
+                NewLogMessage?.Invoke(this, $"{DateTime.Now}: {host} folders readed by {stopWhatch.ElapsedMilliseconds} ms.");
 
-            UpdateFoldersTree?.Invoke(this, rootNode);
+                UpdateFoldersTree?.Invoke(this, rootNode);
+            }
         }
 
         public async Task ReadSubFolders(TreeNode rootFolder)
@@ -137,11 +131,18 @@ namespace MailClient.MailWrapper
 
             foreach (var serverFolder in serverFolders)
             {
-                if(!await OpenMailFolder(serverFolder)) return;
+                try
+                {
+                    if (!serverFolder.IsOpen) await serverFolder.OpenAsync(FolderAccess.ReadWrite);
+                }
+                catch (Exception ex)
+                {
+                    NewLogMessage?.Invoke(this, $"{DateTime.Now}: ReadMails Exception: {ex.Message}.");
+                }
 
-                await serverFolder.StatusAsync(StatusItems.Unread| StatusItems.Count);
 
-                var nodeTree = CreateOrUppdate(serverFolder);
+
+                var nodeTree = await CreateOrUppdate(serverFolder);
 
                 rootFolder.Nodes.Add(nodeTree);
                 
@@ -150,12 +151,13 @@ namespace MailClient.MailWrapper
                 serverFolder.Opened += ServerFolder_Opened;
                 serverFolder.UnreadChanged += ServerFolder_UnreadChanged;
 
-                await ReadSubFolders(nodeTree).ConfigureAwait(false);
+                await ReadSubFolders(nodeTree);
             }
         }
 
-        public TreeNode CreateOrUppdate(IMailFolder folder)
+        public async Task<TreeNode> CreateOrUppdate(IMailFolder folder)
         {
+            await folder.StatusAsync(StatusItems.Unread | StatusItems.Count);
             if (!folders.TryGetValue(folder, out var treeNode))
             {
                 treeNode = new TreeNode { Tag = folder };
@@ -188,7 +190,13 @@ namespace MailClient.MailWrapper
         {
             NewLogMessage?.Invoke(this, $"{DateTime.Now}: New Unread message.");
             if (sender is IMailFolder rootMailFolder)
-                CreateOrUppdate(rootMailFolder);
+            {
+                UpdateForm(this, new Action(() =>
+                {
+                    CreateOrUppdate(rootMailFolder).ContinueWith((t) => ReadMails(t.Result));
+                }));
+            }
+
         }
 
         private void ServerFolder_Opened(object sender, EventArgs e)
@@ -199,23 +207,35 @@ namespace MailClient.MailWrapper
 
         private void ServerFolder_CountChanged(object sender, EventArgs e)
         {
+            done?.Cancel();
+
             NewLogMessage?.Invoke(this, $"{DateTime.Now}: Message count changed.");
             if (sender is IMailFolder rootMailFolder)
-                CreateOrUppdate(rootMailFolder);
+            {
+                UpdateForm(this, new Action(() => 
+                { 
+                    CreateOrUppdate(rootMailFolder).ContinueWith((t)=>ReadMails(t.Result)); 
+                }));
+            }
         }
 
         private void ServerFolder_MessageFlagsChanged(object sender, MessageFlagsChangedEventArgs e)
         {
+            done?.Cancel();
+
             NewLogMessage?.Invoke(this, $"{DateTime.Now}: Message Number: {e.Index} flags changed.");
             if (sender is IMailFolder rootMailFolder)
-                CreateOrUppdate(rootMailFolder);
+            {
+                UpdateForm(this, new Action(() =>
+                {
+                    CreateOrUppdate(rootMailFolder).ContinueWith((t) => ReadMails(t.Result));
+                }));
+            }
         }
 
         public async Task ReadMails(TreeNode rootFolder)
         {
             if (!(rootFolder.Tag is IMailFolder rootMailFolder)) return;
-
-            if (!await OpenMailFolder(rootMailFolder)) return;
 
             Stopwatch stopWhatch = new Stopwatch();
             stopWhatch.Start();
@@ -242,19 +262,7 @@ namespace MailClient.MailWrapper
             NewLogMessage?.Invoke(this, $"{DateTime.Now}: {rootMailFolder.Name} folders mail readed by {stopWhatch.ElapsedMilliseconds} ms.");
         }
 
-        public async Task<bool> OpenMailFolder(IMailFolder folder)
-        {
-            try
-            {
-                if (!folder.IsOpen) await folder.OpenAsync(FolderAccess.ReadWrite);
-                return true;
-            }
-            catch (Exception ex)
-            {
-                NewLogMessage?.Invoke(this, $"{DateTime.Now}: ReadMails Exception: {ex.Message}.");
-            }
-            return false;
-        }
+
 
         public async Task AddFolder(TreeNode rootFolder, string name="NewFolder")
         {
@@ -284,8 +292,6 @@ namespace MailClient.MailWrapper
 
                 rootFolder.Remove();
             }
-
-
         }
 
         public void RenderMailMessage(IMailFolder mailFolder, IMessageSummary messageInfo)
@@ -330,13 +336,17 @@ namespace MailClient.MailWrapper
         {
             if (Client.Capabilities.HasFlag(ImapCapabilities.Idle))
             {
-                using (done = new CancellationTokenSource(new TimeSpan(0, 9, 0)))
+                NewLogMessage?.Invoke(this, $"{DateTime.Now}: Idle Mode.");
+                using(done = new CancellationTokenSource(new TimeSpan(0, 9, 0)))
                     await Client.IdleAsync(done.Token, cancel.Token);
+                NewLogMessage?.Invoke(this, $"{DateTime.Now}: Normal Mode.");
             }
             else
             {
+                NewLogMessage?.Invoke(this, $"{DateTime.Now}: Idle Mode.");
                 await Task.Delay(new TimeSpan(0, 1, 0), cancel.Token);
                 await Client.NoOpAsync(cancel.Token);
+                NewLogMessage?.Invoke(this, $"{DateTime.Now}: Normal Mode.");
             }
         }
     }
