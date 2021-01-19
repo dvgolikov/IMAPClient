@@ -74,6 +74,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="MailWrapper\IMailPresentation.cs" />
+    <Compile Include="MailWrapper\MailFolder.cs" />
+    <Compile Include="MailWrapper\MailMessage.cs" />
     <Compile Include="MailWrapper\MailRender.cs" />
     <Compile Include="MailWrapper\MailWorker.cs" />
     <Compile Include="MailWrapper\MultipartRelatedImageContext.cs" />
