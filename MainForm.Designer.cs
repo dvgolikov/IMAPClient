@@ -52,8 +52,7 @@ namespace MailClient
             // 
             // ConnectButton
             // 
-            this.ConnectButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.ConnectButton.Location = new System.Drawing.Point(1096, 13);
+            this.ConnectButton.Location = new System.Drawing.Point(994, 12);
             this.ConnectButton.Name = "ConnectButton";
             this.ConnectButton.Size = new System.Drawing.Size(75, 23);
             this.ConnectButton.TabIndex = 0;
@@ -65,23 +64,23 @@ namespace MailClient
             // 
             this.ServerTextBox.Location = new System.Drawing.Point(59, 14);
             this.ServerTextBox.Name = "ServerTextBox";
-            this.ServerTextBox.Size = new System.Drawing.Size(281, 20);
+            this.ServerTextBox.Size = new System.Drawing.Size(199, 20);
             this.ServerTextBox.TabIndex = 2;
             this.ServerTextBox.Text = "mx1.onlyoffice.com";
             // 
             // PortTextBox
             // 
-            this.PortTextBox.Location = new System.Drawing.Point(381, 15);
+            this.PortTextBox.Location = new System.Drawing.Point(299, 14);
             this.PortTextBox.Name = "PortTextBox";
-            this.PortTextBox.Size = new System.Drawing.Size(50, 20);
+            this.PortTextBox.Size = new System.Drawing.Size(29, 20);
             this.PortTextBox.TabIndex = 3;
             this.PortTextBox.Text = "993";
             // 
             // LoginTextBox
             // 
-            this.LoginTextBox.Location = new System.Drawing.Point(479, 15);
+            this.LoginTextBox.Location = new System.Drawing.Point(376, 14);
             this.LoginTextBox.Name = "LoginTextBox";
-            this.LoginTextBox.Size = new System.Drawing.Size(259, 20);
+            this.LoginTextBox.Size = new System.Drawing.Size(251, 20);
             this.LoginTextBox.TabIndex = 4;
             this.LoginTextBox.Text = "dmitriy.golikov@onlyoffice.com";
             // 
@@ -97,7 +96,7 @@ namespace MailClient
             // label2
             // 
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(346, 18);
+            this.label2.Location = new System.Drawing.Point(264, 17);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(29, 13);
             this.label2.TabIndex = 6;
@@ -106,7 +105,7 @@ namespace MailClient
             // label3
             // 
             this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(437, 18);
+            this.label3.Location = new System.Drawing.Point(334, 17);
             this.label3.Name = "label3";
             this.label3.Size = new System.Drawing.Size(36, 13);
             this.label3.TabIndex = 7;
@@ -115,7 +114,7 @@ namespace MailClient
             // label4
             // 
             this.label4.AutoSize = true;
-            this.label4.Location = new System.Drawing.Point(744, 18);
+            this.label4.Location = new System.Drawing.Point(633, 18);
             this.label4.Name = "label4";
             this.label4.Size = new System.Drawing.Size(56, 13);
             this.label4.TabIndex = 8;
@@ -123,7 +122,7 @@ namespace MailClient
             // 
             // PasswordTextBox
             // 
-            this.PasswordTextBox.Location = new System.Drawing.Point(797, 15);
+            this.PasswordTextBox.Location = new System.Drawing.Point(695, 15);
             this.PasswordTextBox.Name = "PasswordTextBox";
             this.PasswordTextBox.PasswordChar = '*';
             this.PasswordTextBox.Size = new System.Drawing.Size(293, 20);

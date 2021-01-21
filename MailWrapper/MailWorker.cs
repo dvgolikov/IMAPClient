@@ -140,10 +140,7 @@ namespace MailClient.MailWrapper
                     NewLogMessage?.Invoke(this, $"{DateTime.Now}: ReadMails Exception: {ex.Message}.");
                 }
 
-
-
                 var nodeTree = await CreateOrUppdate(serverFolder);
-
                 rootFolder.Nodes.Add(nodeTree);
                 
                 serverFolder.MessageFlagsChanged += ServerFolder_MessageFlagsChanged;
